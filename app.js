@@ -90,31 +90,39 @@ const domain = "https://internshala.com/login/employer"
 
      for(let e=0;e<Data.length;e++){
        await page.goto(Data[e].url)
-       await page.waitForSelector("#skill_filter")
-     // await page.type("#skill_filter","content writing",{delay:50})
-     await delay(2000)
-     for(let i=0;i<Data[e].skill.length;i++){
-         console.log(i)
-         await (await page.$('#skill_filter')).type(Data[e].skill[i],{delay:200})
-         
-         await page.waitForSelector("#ui-id-2")
-         await delay(3000)
-         await (await page.$('#skill_filter')).press('Tab');
-         await delay(3000)
-        
-      }
-     //  await (await page.$('#skill_filter')).press('Tab');
-     //  await delay(500)
-     //  await (await page.$('#degree_filter')).type("science",{delay:200})
-     //  await delay(500)
-     //  await (await page.$('#degree_filter')).press('Tab');
-     //  await delay(500)
-     await page.$eval('input[name="assignment_not_sent_app_received_filter"]', check => check.checked = true);
-     await delay(500)
-     await page.click('#apply_filter')
-     await delay(3000)
-     
-   
+       const countElement  = await page.waitForSelector("#invited_applications_count") 
+       
+        await delay(1000)
+       var existSkill = await countElement.evaluate((el) => el.textContent)
+       console.log(existSkill)
+       if(parseInt(existSkill)>0){
+
+         await page.waitForSelector("#skill_filter")
+         // await page.type("#skill_filter","content writing",{delay:50})
+         await delay(2000)
+         for(let i=0;i<Data[e].skill.length;i++){
+           console.log(i)
+           await (await page.$('#skill_filter')).type(Data[e].skill[i],{delay:200})
+           
+           await page.waitForSelector("#ui-id-2")
+           await delay(3000)
+           await (await page.$('#skill_filter')).press('Tab');
+           await delay(3000)
+           
+          }
+          //  await (await page.$('#skill_filter')).press('Tab');
+          //  await delay(500)
+          //  await (await page.$('#degree_filter')).type("science",{delay:200})
+          //  await delay(500)
+          //  await (await page.$('#degree_filter')).press('Tab');
+          //  await delay(500)
+          await page.$eval('input[name="assignment_not_sent_app_received_filter"]', check => check.checked = true);
+          await delay(500)
+          await page.click('#apply_filter')
+          await delay(3000)
+          
+          
+        }
 
      var exists =  await page.$eval("div.individual_application", () => false).catch(() => true)
 
@@ -140,21 +148,57 @@ const domain = "https://internshala.com/login/employer"
         exists = await page.$eval("div.individual_application", () => false).catch(() => true)
         console.log(exists)
      }
-    
-     await page.click('#new_applications')
-     await delay(500)
-     for(let i=0;i<Data[e].skill.length;i++){
-      await (await page.$('#skill_filter')).type(Data[e].skill[i],{delay:200})
+
+     if(parseInt(existSkill)>0){
+        console.log("hey")
+       await page.waitForSelector(".clear_filter_form_only")
+       await page.click(".clear_filter_form_only")
+       await delay(500)
+       await page.click('#apply_filter')
+       await delay(5000)
+       exists = await page.$eval("div.individual_application", () => false).catch(() => true)
+       console.log(exists)
+       let pose = 0
+       while(exists != true){
+         
+         if(pose == 9){
+          pose = 0
+          await page.reload({ waitUntil: ["networkidle0", "domcontentloaded"] });
+          await delay(2000)
+         }
+         const elhndle  = await  page.$$("button.skip")
+         await elhndle[pose].evaluate(async(x)=>{
+           await x.click()
+          })
+          await delay(2000)
+          exists = await page.$eval("div.individual_application", () => false).catch(() => true)
+          await delay(1000)
+          pose++
+        }
+
+
+      }
       
-      await page.waitForSelector("#ui-id-2")
-      await delay(3000)
-      await (await page.$('#skill_filter')).press('Tab');
-      await delay(3000)
-   }
-   await page.$eval('input[name="assignment_not_sent_app_received_filter"]', check => check.checked = true);
-     await delay(500)
-     await page.click('#apply_filter')
-     await delay(1000)    
+      await page.click('#new_applications')
+      await delay(1000)
+      const elment  = await page.waitForSelector("#new_applications_count") 
+      var application_recieved = await elment.evaluate((el) => el.textContent)
+      if(parseInt(application_recieved)>0){
+
+        await delay(500)
+        for(let i=0;i<Data[e].skill.length;i++){
+          await (await page.$('#skill_filter')).type(Data[e].skill[i],{delay:200})
+          
+          await page.waitForSelector("#ui-id-2")
+          await delay(3000)
+          await (await page.$('#skill_filter')).press('Tab');
+          await delay(3000)
+        }
+        await page.$eval('input[name="assignment_not_sent_app_received_filter"]', check => check.checked = true);
+        await delay(500)
+        await page.click('#apply_filter')
+        await delay(1000)    
+      }
      var existApplication = await page.$eval("div.individual_application", () => false).catch(() => true)
      if(existApplication != true){
       await page.waitForSelector("#select_all")
@@ -168,6 +212,19 @@ const domain = "https://internshala.com/login/employer"
       elhndle3[0].evaluate(async(x)=>{
         x.click()
        })
+     }
+
+     if(parseInt(application_recieved)>0){
+      await page.waitForSelector(".clear_filter_form_only")
+      await page.click(".clear_filter_form_only") 
+      await delay(1000)
+      await page.waitForSelector("#select_all")
+      await page.$eval('input[id="select_all"]', check => check.click());
+      await page.waitForSelector("#group_assignment")
+      await delay(1000)
+      await page.click("#rejected")
+      await delay(1000)
+      // await page.click('#group_assignment')
      }
    
     await page.click('#shortlisted_applications')
@@ -208,9 +265,9 @@ const domain = "https://internshala.com/login/employer"
         
 }
 
-cron.schedule("* 10 * * *",async()=>{
-  login()
-})
+login()
+// cron.schedule("* 10 * * *",async()=>{
+// })
 
 
 
