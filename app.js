@@ -208,9 +208,9 @@ const domain = "https://internshala.com/login/employer"
         
 }
 
-login()
-// cron.schedule("36 16 * * *",async()=>{
-// })
+cron.schedule("* 10 * * *",async()=>{
+  login()
+})
 
 
 
